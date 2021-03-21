@@ -18,18 +18,10 @@ dbReq.onerror = function (event) {
 };
 function addInfo(record) {
   // Start a database transaction and get the notes object store
-  let tx = db.transaction(["waiting"], "readwrite");
-  let store = tx.objectStore("waiting");
+  let transaction = db.transaction(["waiting"], "readwrite");
+  let store = transaction.objectStore("waiting");
   // Put the sticky note into the object store
-  let waiting = { text: message, timestamp: Date.now() };
   store.add(record);
-  // Wait for the database transaction to complete
-  tx.oncomplete = function () {
-    console.log("stored note!");
-  };
-  tx.onerror = function (event) {
-    alert("error storing note " + event.target.errorCode);
-  };
 }
 
 function checkDatabase() {
