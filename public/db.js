@@ -1,34 +1,42 @@
 let db;
-let dbReq = indexedDB.open("budgetDatabase", 1);
-dbReq.onupgradeneeded = function (event) {
-  // Set the db variable to our database so we can use it!
+// create a new db request for a "budget" database.
+const request = indexedDB.open("budgetdb", 1);
+
+request.onupgradeneeded = function (event) {
+  // create object store called "pending" and set autoIncrement to true
+  const db = event.target.result;
+  db.createObjectStore("pending", { autoIncrement: true });
+};
+
+request.onsuccess = function (event) {
   db = event.target.result;
 
-  db.createObjectStore("waiting", { autoIncrement: true });
+  // check if app is online before reading from db
+  if (navigator.onLine) {
+    checkDatabase();
+  }
 };
-dbReq.onsuccess = function (event) {
-  db = event.target.result;
-  //check if the app is online before running database
-  //   if (navigator.onLine) {
-  //     checkDatabase();
-  //   }
+
+request.onerror = function (event) {
+  console.log("Woops! " + event.target.errorCode);
 };
-dbReq.onerror = function (event) {
-  alert("error opening database " + event.target.errorCode);
-};
-function addInfo(record) {
-  // Start a database transaction and get the notes object store
-  let transaction = db.transaction(["waiting"], "readwrite");
-  let store = transaction.objectStore("waiting");
-  // Put the sticky note into the object store
+
+function saveRecord(record) {
+  // create a transaction on the pending db with readwrite access
+  const transaction = db.transaction(["pending"], "readwrite");
+
+  // access your pending object store
+  const store = transaction.objectStore("pending");
+
+  // add record to your store with add method.
   store.add(record);
 }
 
 function checkDatabase() {
-  // open a transaction on your waiting db
-  const transaction = db.transaction(["waiting"], "readwrite");
-  // access your waiting object store
-  const store = transaction.objectStore("waiting");
+  // open a transaction on your pending db
+  const transaction = db.transaction(["pending"], "readwrite");
+  // access your pending object store
+  const store = transaction.objectStore("pending");
   // get all records from store and set to a variable
   const getAll = store.getAll();
 
@@ -44,11 +52,11 @@ function checkDatabase() {
       })
         .then((response) => response.json())
         .then(() => {
-          // if successful, open a transaction on your waiting db
-          const transaction = db.transaction(["waiting"], "readwrite");
+          // if successful, open a transaction on your pending db
+          const transaction = db.transaction(["pending"], "readwrite");
 
-          // access your waiting object store
-          const store = transaction.objectStore("waiting");
+          // access your pending object store
+          const store = transaction.objectStore("pending");
 
           // clear all items in your store
           store.clear();
@@ -56,4 +64,6 @@ function checkDatabase() {
     }
   };
 }
+
+// listen for app coming back online
 window.addEventListener("online", checkDatabase);
